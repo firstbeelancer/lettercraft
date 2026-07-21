@@ -51,7 +51,15 @@ router.post(
     const link = `${APP_URL}/auth/verify?token=${encodeURIComponent(plain)}`;
     await sendMagicLink(email, link);
 
-    res.json({ ok: true });
+    // Dev-режим: если SMTP не настроен, отдаём ссылку в ответе,
+    // чтобы можно было войти без почтового сервера.
+    // Включается через env MAGIC_LINK_IN_RESPONSE=true
+    const exposeLink = process.env.MAGIC_LINK_IN_RESPONSE === "true";
+    res.json(
+      exposeLink
+        ? { ok: true, devLink: link, devNote: "SMTP не настроен — ссылка возвращена в ответе. Включено через MAGIC_LINK_IN_RESPONSE=true" }
+        : { ok: true }
+    );
   })
 );
 

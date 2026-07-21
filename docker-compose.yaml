@@ -5,13 +5,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-lettercraft}
-      POSTGRES_USER: ${POSTGRES_USER:-lettercraft}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lettercraft}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lettercraft} -d ${POSTGRES_DB:-lettercraft}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -27,18 +27,17 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-lettercraft}:${POSTGRES_PASSWORD:-lettercraft}@db:5432/${POSTGRES_DB:-lettercraft}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      APP_URL: ${APP_URL:-http://localhost:8080}
-      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      APP_URL: ${APP_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
       STORAGE_ROOT: /data/lettercraft-storage
       PORT: 3001
-      # SMTP (опционально — если не задан, magic link пишется в логи контейнера)
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-no-reply@lettercraft.local}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
     volumes:
       - lettercraft-storage:/data/lettercraft-storage
     healthcheck:
@@ -57,15 +56,8 @@ services:
     restart: unless-stopped
     depends_on:
       - api
-    environment:
-      # Vite proxy при dev, в продакшене не нужно — nginx проксирует /api на api
-      VITE_API_PROXY: http://api:3001
     networks:
       - lettercraft-net
-    # В Coolify Traefik маршрутизирует по домену.
-    # Прямой порт 8080 закомментирован, чтобы случайно не светить наружу.
-    # ports:
-    #   - "8080:80"
 
 volumes:
   db-data:

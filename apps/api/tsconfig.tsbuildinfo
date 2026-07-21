@@ -1,0 +1,1 @@
+{"root":["./src/server.ts","./src/db/index.ts","./src/db/schema.ts","./src/db/seed.ts","./src/lib/magic-link.ts","./src/lib/mail.ts","./src/middleware/auth.ts","./src/middleware/errors.ts","./src/routes/auth.ts","./src/routes/brand.ts","./src/routes/letters.ts"],"version":"5.9.3"}

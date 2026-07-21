@@ -1,0 +1,76 @@
+name: lettercraft
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lettercraft}
+      POSTGRES_USER: ${POSTGRES_USER:-lettercraft}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lettercraft}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lettercraft} -d ${POSTGRES_DB:-lettercraft}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - lettercraft-net
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lettercraft}:${POSTGRES_PASSWORD:-lettercraft}@db:5432/${POSTGRES_DB:-lettercraft}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      STORAGE_ROOT: /data/lettercraft-storage
+      PORT: 3001
+      # SMTP (опционально — если не задан, magic link пишется в логи контейнера)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@lettercraft.local}
+    volumes:
+      - lettercraft-storage:/data/lettercraft-storage
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    networks:
+      - lettercraft-net
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # Vite proxy при dev, в продакшене не нужно — nginx проксирует /api на api
+      VITE_API_PROXY: http://api:3001
+    networks:
+      - lettercraft-net
+    # В Coolify Traefik маршрутизирует по домену.
+    # Прямой порт 8080 закомментирован, чтобы случайно не светить наружу.
+    # ports:
+    #   - "8080:80"
+
+volumes:
+  db-data:
+  lettercraft-storage:
+
+networks:
+  lettercraft-net:
+    driver: bridge

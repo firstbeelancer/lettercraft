@@ -29,4 +29,5 @@ yarn-error.log*
 # Build artifacts
 apps/api/dist/
 apps/web/dist/
-apps/api/drizzle/
+# drizzle: keep SQL migrations, ignore meta
+apps/api/drizzle/meta/

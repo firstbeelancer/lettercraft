@@ -88,10 +88,13 @@ async function request<T>(
 export const api = {
   // ---------- auth ----------
   async requestMagicLink(email: string) {
-    return request<{ ok: true }>("/auth/magic-link", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    });
+    return request<{ ok: true; devLink?: string; devNote?: string }>(
+      "/auth/magic-link",
+      {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }
+    );
   },
   async verifyToken(token: string) {
     return request<AuthVerifyResponse>(

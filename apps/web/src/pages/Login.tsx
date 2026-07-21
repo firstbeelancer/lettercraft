@@ -234,6 +234,14 @@ function ArrowRight() {
     </svg>
   );
 }
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="8" y="8" width="12" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
 function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -259,6 +267,8 @@ export default function Login() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [devLink, setDevLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
@@ -271,7 +281,8 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await api.requestMagicLink(email.trim().toLowerCase());
+      const resp = await api.requestMagicLink(email.trim().toLowerCase());
+      setDevLink(resp.devLink || null);
       setSent(true);
     } catch (err: any) {
       setError(err?.message || "Не удалось отправить ссылку. Попробуйте ещё раз.");
@@ -284,7 +295,27 @@ export default function Login() {
     setSent(false);
     setEmail("");
     setError("");
+    setDevLink(null);
+    setCopied(false);
   }, []);
+
+  const copyLink = useCallback(async () => {
+    if (!devLink) return;
+    try {
+      await navigator.clipboard.writeText(devLink);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = devLink;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); setCopied(true); } catch {}
+      document.body.removeChild(ta);
+      window.setTimeout(() => setCopied(false), 2200);
+    }
+  }, [devLink]);
 
   return (
     <main className="auth-page">
@@ -337,8 +368,8 @@ export default function Login() {
                 transition={{ duration: 0.3 }}
               >
                 <div className="intro">
-                  <p className="intro-kicker">Ваше рабочее пространство</p>
-                  <h1>С возвращением</h1>
+                  <p className="intro-kicker">Голос Вашего бизнеса</p>
+                  <h1>Письма, которые читают</h1>
                   <p>Введите рабочий email — пришлём ссылку для входа. Без пароля.</p>
                 </div>
 
@@ -405,6 +436,36 @@ export default function Login() {
                   Проверьте почтовый ящик{" "}
                   <strong>{email}</strong>. Ссылка для входа действительна 15 минут.
                 </p>
+                {devLink && (
+                  <div className="dev-link-box" role="region" aria-label="Ссылка для входа">
+                    <div className="dev-link-box__label">
+                      <span className="dev-pill">DEV</span>
+                      SMTP не настроен — ссылка для копирования
+                    </div>
+                    <div className="dev-link-box__url" title={devLink}>
+                      {devLink}
+                    </div>
+                    <div className="dev-link-box__actions">
+                      <a
+                        href={devLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="dev-link-btn dev-link-btn--primary"
+                      >
+                        <ArrowRight />
+                        Открыть
+                      </a>
+                      <button
+                        type="button"
+                        onClick={copyLink}
+                        className="dev-link-btn dev-link-btn--secondary"
+                      >
+                        {copied ? <CheckIcon /> : <CopyIcon />}
+                        {copied ? "Скопировано" : "Скопировать"}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <button type="button" className="link-button" onClick={reset}>
                   Указать другой email
                 </button>

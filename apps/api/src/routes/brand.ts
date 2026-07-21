@@ -8,6 +8,7 @@ import multer from "multer";
 import { db, schema } from "../db/index.js";
 import { authRequired } from "../middleware/auth.js";
 import { HttpError } from "../middleware/errors.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 
 const router = Router();
 router.use(authRequired);
@@ -43,7 +44,7 @@ async function ensureDir(dir: string) {
 }
 
 // ---------- GET /brand ----------
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", asyncHandler(async (req: Request, res: Response) => {
   const rows = await db
     .select({
       id: schema.brandAssets.id,
@@ -83,10 +84,10 @@ router.get("/", async (req: Request, res: Response) => {
     })
   );
   res.json({ assets: items });
-});
+}));
 
 // ---------- POST /brand (multipart: type, file) ----------
-router.post("/", upload.single("file"), async (req: Request, res: Response) => {
+router.post("/", upload.single("file"), asyncHandler(async (req: Request, res: Response) => {
   const type = String(req.body.type || "") as AssetType;
   if (!ALLOWED_TYPES.includes(type)) {
     throw new HttpError(400, "invalid_type");
@@ -133,10 +134,10 @@ router.post("/", upload.single("file"), async (req: Request, res: Response) => {
       url: `/api/v1/brand/${row.id}/file`,
     },
   });
-});
+}));
 
 // ---------- GET /brand/:id/file — стрим файла ----------
-router.get("/:id/file", async (req: Request, res: Response) => {
+router.get("/:id/file", asyncHandler(async (req: Request, res: Response) => {
   const rows = await db
     .select()
     .from(schema.brandAssets)
@@ -160,10 +161,10 @@ router.get("/:id/file", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", asset.mimeType);
   res.setHeader("Cache-Control", "private, max-age=3600");
   createReadStream(absPath).pipe(res);
-});
+}));
 
 // ---------- DELETE /brand/:id ----------
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete("/:id", asyncHandler(async (req: Request, res: Response) => {
   const rows = await db
     .delete(schema.brandAssets)
     .where(
@@ -180,6 +181,6 @@ router.delete("/:id", async (req: Request, res: Response) => {
   const abs = path.join(STORAGE_ROOT, rows[0].storagePath);
   fs.unlink(abs).catch(() => {});
   res.json({ ok: true });
-});
+}));
 
 export default router;

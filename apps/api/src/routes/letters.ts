@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db, schema } from "../db/index.js";
 import { authRequired } from "../middleware/auth.js";
 import { HttpError } from "../middleware/errors.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 
 const router = Router();
 router.use(authRequired);
@@ -20,7 +21,7 @@ const upsertSchema = z.object({
 const patchSchema = upsertSchema.partial();
 
 // ---------- GET /letters ----------
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const rows = await db
     .select({
@@ -36,10 +37,10 @@ router.get("/", async (req: Request, res: Response) => {
     .where(eq(schema.letters.userId, userId))
     .orderBy(desc(schema.letters.updatedAt));
   res.json({ letters: rows });
-});
+}));
 
 // ---------- POST /letters ----------
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", asyncHandler(async (req: Request, res: Response) => {
   const parsed = upsertSchema.safeParse(req.body);
   if (!parsed.success) {
     throw new HttpError(400, "invalid_body");
@@ -59,10 +60,10 @@ router.post("/", async (req: Request, res: Response) => {
     })
     .returning();
   res.status(201).json({ letter: row });
-});
+}));
 
 // ---------- GET /letters/:id ----------
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", asyncHandler(async (req: Request, res: Response) => {
   const rows = await db
     .select()
     .from(schema.letters)
@@ -77,10 +78,10 @@ router.get("/:id", async (req: Request, res: Response) => {
     throw new HttpError(404, "not_found");
   }
   res.json({ letter: rows[0] });
-});
+}));
 
 // ---------- PATCH /letters/:id ----------
-router.patch("/:id", async (req: Request, res: Response) => {
+router.patch("/:id", asyncHandler(async (req: Request, res: Response) => {
   const parsed = patchSchema.safeParse(req.body);
   if (!parsed.success) {
     throw new HttpError(400, "invalid_body");
@@ -109,10 +110,10 @@ router.patch("/:id", async (req: Request, res: Response) => {
     throw new HttpError(404, "not_found");
   }
   res.json({ letter: row });
-});
+}));
 
 // ---------- DELETE /letters/:id ----------
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete("/:id", asyncHandler(async (req: Request, res: Response) => {
   const rows = await db
     .delete(schema.letters)
     .where(
@@ -126,6 +127,6 @@ router.delete("/:id", async (req: Request, res: Response) => {
     throw new HttpError(404, "not_found");
   }
   res.json({ ok: true });
-});
+}));
 
 export default router;

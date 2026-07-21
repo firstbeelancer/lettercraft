@@ -38,6 +38,8 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
+      # Dev: если true, magic link возвращается в ответе API (для тестов без SMTP)
+      MAGIC_LINK_IN_RESPONSE: ${MAGIC_LINK_IN_RESPONSE}
     volumes:
       - lettercraft-storage:/data/lettercraft-storage
     healthcheck:
